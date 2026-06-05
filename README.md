@@ -81,5 +81,5 @@ RevoShop is a full-featured e-commerce store that allows users to browse and pur
 
 ## 📱 Screenshots or Demo Links
 
-*[not yet]*
+Visit [RevoShop](revoshopy.netlify.app)
 
