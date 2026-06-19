@@ -40,16 +40,23 @@ export function useCart() {
     };
 
     window.addEventListener("cartUpdated", handleStorageChange);
-    
+
     return () => {
       window.removeEventListener("cartUpdated", handleStorageChange);
     };
   }, []);
 
   const addToCart = (id: string) => {
+    const storedUser = localStorage.getItem("revoshop-user");
+    if (!storedUser) {
+      window.location.href =
+        "/login?redirect=" + encodeURIComponent(window.location.pathname);
+      return;
+    }
+
     const stored = localStorage.getItem("revoshop-cart");
     let currentItems: CartItem[] = [];
-    
+
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as CartItem[];
@@ -63,7 +70,7 @@ export function useCart() {
 
     const existing = currentItems.find((item) => item.id === id);
     let newItems: CartItem[];
-    
+
     if (existing) {
       newItems = currentItems.map((item) =>
         item.id === id ? { ...item, quantity: item.quantity + 1 } : item,
@@ -74,14 +81,14 @@ export function useCart() {
 
     localStorage.setItem("revoshop-cart", JSON.stringify(newItems));
     setItems(newItems);
-    
+
     window.dispatchEvent(new CustomEvent("cartUpdated"));
   };
 
   const removeFromCart = (id: string) => {
     const stored = localStorage.getItem("revoshop-cart");
     let currentItems: CartItem[] = [];
-    
+
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as CartItem[];
@@ -96,7 +103,7 @@ export function useCart() {
     const newItems = currentItems.filter((item) => item.id !== id);
     localStorage.setItem("revoshop-cart", JSON.stringify(newItems));
     setItems(newItems);
-    
+
     window.dispatchEvent(new CustomEvent("cartUpdated"));
   };
 
@@ -104,7 +111,7 @@ export function useCart() {
     const newItems: CartItem[] = [];
     localStorage.setItem("revoshop-cart", JSON.stringify(newItems));
     setItems(newItems);
-    
+
     window.dispatchEvent(new CustomEvent("cartUpdated"));
   };
 

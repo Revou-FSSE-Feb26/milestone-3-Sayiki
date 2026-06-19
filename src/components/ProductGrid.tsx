@@ -1,9 +1,33 @@
+"use client"
 import Image from "next/image";
 import Link from "next/link";
-
-import { products } from "../data/products";
+import { useState, useEffect } from "react";
 
 export default function ProductGrid() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() =>{
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products");
+        const data = await response.json();
+        setProducts(data);
+        setLoading(false);
+      } catch (error){
+        console.log("Error:", error);
+        setLoading(false);
+        
+      }
+    };
+    fetchProducts();
+  },[])
+
+  if (loading){
+    return(
+      <div>Loading Products...</div>
+    )
+  }
   return (
     <section className="px-6 sm:px-10 lg:px-16 mt-16 mb-10">
       <div className="flex items-end justify-between">
@@ -13,7 +37,7 @@ export default function ProductGrid() {
         <span className="text-sm text-neutral-500">Curated picks</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-        {products.slice(0, 6).map((product) => (
+        {products.slice(0, 6).map((product, index) => (
           <div
             key={product.id}
             className="group text-neutral-900 flex flex-col rounded-2xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
@@ -25,21 +49,23 @@ export default function ProductGrid() {
               <div className="flex h-40 w-full items-center justify-center rounded-xl bg-[#f2f1ee]">
                 <Image
                   src={product.image}
-                  alt={product.name}
+                  alt={product.title}
                   width={200}
                   height={200}
                   className="h-32 w-auto object-contain"
+                  loading="eager"
+                  priority={index < 3}
                 />
               </div>
             </Link>
             <div className="flex flex-1 flex-col gap-1 px-4 pb-4">
               <Link href={`/product/${product.id}`}>
                 <h3 className="text-sm font-semibold tracking-tight truncate">
-                  {product.name}
+                  {product.title}
                 </h3>
               </Link>
               <span className="text-sm font-medium text-neutral-700">
-                {product.priceLabel}
+                ${product.price}
               </span>
               <a href={`/product/${product.id}`} className="mt-auto">
                 <button className="mt-4 w-full cursor-pointer rounded-full border border-neutral-900 px-4 py-2 text-sm font-semibold transition hover:bg-neutral-900 hover:text-white">

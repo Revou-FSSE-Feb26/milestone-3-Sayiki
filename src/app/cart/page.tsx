@@ -1,23 +1,81 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-import Navbar from "../components/navbar";
+import Navbar from "../../components/Navbar";
 import { useCart } from "../context/CartContext";
-import { products } from "../data/products";
+import { useAuth } from "../context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function CartPage() {
   const { items, totalCount, removeFromCart, clearCart } = useCart();
+  const { isAuthenticated, user } = useAuth();
+  const router = useRouter();
   const [message, setMessage] = useState("");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted && !isAuthenticated) {
+      router.push('/login?redirect=/cart');
+    }
+  }, [isMounted, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!isMounted) return; // Don't fetch until mounted
+    
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products");
+        const data = await response.json();
+        setProducts(data);
+        setLoading(false);
+      } catch (error) {
+        console.log("Error:", error);
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [isMounted]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/cart');
+      return;
+    }
+  }, [isAuthenticated, router]);
 
   const cartItems = items
     .map((item) => {
-      const product = products.find((entry) => entry.id === item.id);
+      // Debug: Check what IDs we have
+      console.log('Cart item ID:', item.id, 'Type:', typeof item.id);
+      console.log('First few product IDs:', products.slice(0,3).map(p => ({id: p.id, type: typeof p.id})));
+      
+      const product = products.find((entry) => {
+        // Convert both to strings for comparison
+        return entry.id.toString() === item.id.toString();
+      });
+      
       if (!product) {
+        console.log('No product found for cart item:', item.id);
         return null;
       }
-      return { ...product, quantity: item.quantity };
+      
+      console.log('Found product:', product.title);
+      
+      return { 
+        ...product, 
+        quantity: item.quantity,
+        name: product.title,          
+        priceLabel: `$${product.price}`, 
+        priceValue: product.price      
+      };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
@@ -30,6 +88,43 @@ export default function CartPage() {
     clearCart();
     setMessage("Thank you for your purchase!");
   };
+
+  if (!isMounted) {
+    return (
+      <>
+        <Navbar />
+        <div className="px-6 sm:px-10 lg:px-16 py-10">
+          <div className="text-center">
+            <p>Loading...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Navbar />
+        <div className="px-6 sm:px-10 lg:px-16 py-10">
+          <div className="text-center">
+            <p>Redirecting to login...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="px-6 sm:px-10 lg:px-16 py-10">
+          <p>Loading cart...</p>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -53,7 +148,10 @@ export default function CartPage() {
 
         {cartItems.length === 0 ? (
           <div className="mt-10 rounded-2xl border border-dashed border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500">
-            Your cart is empty. Add items from Browse.
+            <p>Your cart is empty. Add items from Browse.</p>
+            
+        
+            
           </div>
         ) : (
           <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -88,10 +186,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-neutral-900">
-                      Rp{" "}
-                      {(item.priceValue * item.quantity).toLocaleString(
-                        "id-ID",
-                      )}
+                      ${(item.priceValue * item.quantity).toFixed(2)}
                     </span>
                     <button
                       type="button"
@@ -115,7 +210,7 @@ export default function CartPage() {
               </div>
               <div className="mt-2 flex items-center justify-between text-sm text-neutral-600">
                 <span>Subtotal</span>
-                <span>Rp {cartTotal.toLocaleString("id-ID")}</span>
+                <span>${cartTotal.toFixed(2)}</span>
               </div>
               <button
                 type="button"

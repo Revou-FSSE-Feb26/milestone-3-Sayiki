@@ -1,14 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import Navbar from "../components/navbar";
+import Navbar from "../../components/Navbar";
 import { useCart } from "../context/CartContext";
-import { products } from "../data/products";
 
 export default function BrowsePage() {
   const { addToCart } = useCart();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const categories = [
     "all",
     ...Array.from(new Set(products.map((item) => item.category))),
@@ -23,9 +24,34 @@ export default function BrowsePage() {
       selectedCategory === "all" || item.category === selectedCategory;
     const matchesSearch =
       normalizedSearch.length === 0 ||
-      item.name.toLowerCase().includes(normalizedSearch);
+      item.title.toLowerCase().includes(normalizedSearch);
     return matchesCategory && matchesSearch;
   });
+  
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try{
+        const response = await fetch("/api/products");
+        const data = await response.json();
+        setProducts(data);
+        setLoading(false);
+      
+      } catch (error){
+        console.log("Error: ", error);
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+  if (loading){
+    return (
+      <>
+        <div>Loading products...</div>
+      </>
+    )
+  }
+
 
   return (
     <>
@@ -96,7 +122,7 @@ export default function BrowsePage() {
             </div>
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
+              {filteredProducts.map((product, index) => (
                 <div
                   key={product.id}
                   className="group flex flex-col rounded-2xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
@@ -108,10 +134,12 @@ export default function BrowsePage() {
                     <div className="flex h-40 w-full items-center justify-center rounded-xl bg-[#f2f1ee]">
                       <Image
                         src={product.image}
-                        alt={product.name}
+                        alt={product.title}
                         width={200}
                         height={200}
                         className="h-32 w-auto object-contain"
+                        loading="eager"
+                        priority={index < 4}
                       />
                     </div>
                   </Link>
@@ -121,11 +149,11 @@ export default function BrowsePage() {
                     </span>
                     <Link href={`/product/${product.id}`}>
                       <h3 className="text-sm font-semibold tracking-tight text-neutral-900 truncate">
-                        {product.name}
+                        {product.title}
                       </h3>
                     </Link>
                     <span className="text-sm font-medium text-neutral-700">
-                      {product.priceLabel}
+                      ${product.price}
                     </span>
                     <button
                       onClick={() => addToCart(product.id)}
