@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -11,13 +11,11 @@ export default function AdminPage() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   
-  // State for products
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [mounted, setMounted] = useState(false);
   
-  // State for form (add/edit)
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
@@ -32,22 +30,19 @@ export default function AdminPage() {
     setMounted(true);
   }, []);
 
-  // Check auth and redirect
   useEffect(() => {
     if (mounted && !isAuthenticated) {
       router.push('/login?redirect=/admin');
     }
   }, [mounted, isAuthenticated, router]);
 
-  // Fetch products on load
   useEffect(() => {
     if (mounted && isAuthenticated) {
       fetchProducts();
     }
   }, [mounted, isAuthenticated]);
 
-  // Fetch products from API
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const response = await fetch('/api/products');
       const data = await response.json();
@@ -57,44 +52,36 @@ export default function AdminPage() {
       setMessage("Failed to load products");
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Form validation
   const [errors, setErrors] = useState({});
 
-  // Validate form data
   const validateProduct = () => {
     const newErrors = {};
     
-    // Title validation
     if (!formData.title || formData.title.trim().length < 3) {
       newErrors.title = "Title must be at least 3 characters";
     }
     
-    // Price validation
     if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price = "Price must be greater than 0";
     }
     
-    // Image URL validation (optional but if provided, should be URL)
     if (formData.image && !formData.image.startsWith('http')) {
       newErrors.image = "Image must be a valid URL (http/https)";
     }
     
-    // Category validation
     if (formData.category && formData.category.length < 2) {
       newErrors.category = "Category must be at least 2 characters";
     }
     
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // Return true if no errors
+    return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submit (add or edit)
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Clear previous message and validate
     setMessage("");
     if (!validateProduct()) {
       setMessage("Please fix the errors below");
@@ -123,7 +110,7 @@ export default function AdminPage() {
         setMessage(result.message);
         setShowForm(false);
         resetForm();
-        fetchProducts(); // Refresh list
+        fetchProducts();
       } else {
         setMessage("Operation failed");
       }
@@ -132,7 +119,6 @@ export default function AdminPage() {
     }
   };
 
-  // Delete product
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
@@ -145,7 +131,7 @@ export default function AdminPage() {
       
       if (result.success) {
         setMessage(result.message);
-        fetchProducts(); // Refresh list
+        fetchProducts();
       } else {
         setMessage("Delete failed");
       }
@@ -154,7 +140,6 @@ export default function AdminPage() {
     }
   };
 
-  // Start editing
   const startEdit = (product) => {
     setEditingId(product.id);
     setFormData({
@@ -167,7 +152,6 @@ export default function AdminPage() {
     setShowForm(true);
   };
 
-  // Reset form
   const resetForm = () => {
     setEditingId(null);
     setFormData({
@@ -177,10 +161,9 @@ export default function AdminPage() {
       image: "",
       category: ""
     });
-    setErrors({}); // Clear all errors
+    setErrors({});
   };
 
-  // Show loading or redirect
   if (!mounted) {
     return (
       <>
@@ -263,7 +246,7 @@ export default function AdminPage() {
                   value={formData.title}
                   onChange={(e) => {
                     setFormData({...formData, title: e.target.value});
-                    if (errors.title) setErrors({...errors, title: null}); // Clear error on change
+                    if (errors.title) setErrors({...errors, title: null});
                   }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 text-black ${
                     errors.title 

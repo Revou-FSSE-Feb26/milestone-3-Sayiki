@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import { useCart } from "../context/CartContext";
@@ -10,35 +10,39 @@ export default function BrowsePage() {
   const { addToCart } = useCart();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const categories = [
-    "all",
-    ...Array.from(new Set(products.map((item) => item.category))),
-  ];
-
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const normalizedSearch = search.trim().toLowerCase();
-  const filteredProducts = products.filter((item) => {
+  const categories = useMemo(() => [
+    "all",
+    ...Array.from(new Set(products.map((item) => item.category))),
+  ], [products]);
+
+  const normalizedSearch = useMemo(() => search.trim().toLowerCase(), [search]);
+  
+  const filteredProducts = useMemo(() => products.filter((item) => {
     const matchesCategory =
       selectedCategory === "all" || item.category === selectedCategory;
     const matchesSearch =
       normalizedSearch.length === 0 ||
       item.title.toLowerCase().includes(normalizedSearch);
     return matchesCategory && matchesSearch;
-  });
+  }), [products, selectedCategory, normalizedSearch]);
   
 
   useEffect(() => {
     const fetchProducts = async () => {
       try{
+        setError("");
         const response = await fetch("/api/products");
+        if (!response.ok) throw new Error("Failed to load products");
         const data = await response.json();
         setProducts(data);
         setLoading(false);
       
       } catch (error){
-        console.log("Error: ", error);
+        setError("Failed to load products. Please try again.");
         setLoading(false);
       }
     };
@@ -47,7 +51,29 @@ export default function BrowsePage() {
   if (loading){
     return (
       <>
-        <div>Loading products...</div>
+        <Navbar />
+        <div className="px-6 sm:px-10 lg:px-16 py-10">
+          <p>Loading products...</p>
+        </div>
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <Navbar />
+        <div className="px-6 sm:px-10 lg:px-16 py-10">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <p className="text-red-600">{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
       </>
     )
   }

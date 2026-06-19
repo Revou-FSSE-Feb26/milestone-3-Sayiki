@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 
 type CartItem = {
   id: string;
@@ -24,29 +24,28 @@ export function useCart() {
     }
   }, []);
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const stored = localStorage.getItem("revoshop-cart");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored) as CartItem[];
-          if (Array.isArray(parsed)) {
-            setItems(parsed);
-          }
-        } catch {
-          setItems([]);
+  const handleStorageChange = useCallback(() => {
+    const stored = localStorage.getItem("revoshop-cart");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as CartItem[];
+        if (Array.isArray(parsed)) {
+          setItems(parsed);
         }
+      } catch {
+        setItems([]);
       }
-    };
+    }
+  }, []);
 
+  useEffect(() => {
     window.addEventListener("cartUpdated", handleStorageChange);
-
     return () => {
       window.removeEventListener("cartUpdated", handleStorageChange);
     };
-  }, []);
+  }, [handleStorageChange]);
 
-  const addToCart = (id: string) => {
+  const addToCart = useCallback((id: string) => {
     const storedUser = localStorage.getItem("revoshop-user");
     if (!storedUser) {
       window.location.href =
@@ -81,11 +80,10 @@ export function useCart() {
 
     localStorage.setItem("revoshop-cart", JSON.stringify(newItems));
     setItems(newItems);
-
     window.dispatchEvent(new CustomEvent("cartUpdated"));
-  };
+  }, []);
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = useCallback((id: string) => {
     const stored = localStorage.getItem("revoshop-cart");
     let currentItems: CartItem[] = [];
 
@@ -103,21 +101,28 @@ export function useCart() {
     const newItems = currentItems.filter((item) => item.id !== id);
     localStorage.setItem("revoshop-cart", JSON.stringify(newItems));
     setItems(newItems);
-
     window.dispatchEvent(new CustomEvent("cartUpdated"));
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     const newItems: CartItem[] = [];
     localStorage.setItem("revoshop-cart", JSON.stringify(newItems));
     setItems(newItems);
-
     window.dispatchEvent(new CustomEvent("cartUpdated"));
-  };
+  }, []);
 
-  const totalCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalCount = useMemo(() => 
+    items.reduce((sum, item) => sum + item.quantity, 0), 
+    [items]
+  );
 
-  return { items, totalCount, addToCart, removeFromCart, clearCart };
+  return useMemo(() => ({ 
+    items, 
+    totalCount, 
+    addToCart, 
+    removeFromCart, 
+    clearCart 
+  }), [items, totalCount, addToCart, removeFromCart, clearCart]);
 }
 
 export function CartProvider({ children }: { children: any }) {

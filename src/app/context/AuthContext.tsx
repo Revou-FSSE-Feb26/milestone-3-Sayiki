@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 
 type User = {
   id: number;
@@ -18,6 +18,9 @@ const authListeners = new Set<() => void>();
 
 const authProxy = new Proxy(authState, {
   set(target, property, value) {
+    const oldValue = target[property as keyof typeof target];
+    if (oldValue === value) return true;
+    
     target[property as keyof typeof target] = value;
     
     if (property === 'user') {
@@ -58,7 +61,7 @@ if (typeof window !== "undefined") {
   }
 }
 
-const login = async (username: string, password: string) => {
+const login = useCallback(async (username: string, password: string) => {
   try {
     const response = await fetch('https://fakestoreapi.com/auth/login', {
       method: 'POST',
@@ -83,37 +86,36 @@ const login = async (username: string, password: string) => {
   } catch (error) {
     return { success: false, message: "Login failed. Please try again." };
   }
-};
+}, []);
 
-const logout = () => {
+const logout = useCallback(() => {
   authProxy.user = null;
-};
+}, []);
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(authProxy.user);
   const [isAuthenticated, setIsAuthenticated] = useState(authProxy.isAuthenticated);
 
+  const updateAuth = useCallback(() => {
+    setUser(authProxy.user);
+    setIsAuthenticated(authProxy.isAuthenticated);
+  }, []);
+
   useEffect(() => {
-    const updateAuth = () => {
-      setUser(authProxy.user);
-      setIsAuthenticated(authProxy.isAuthenticated);
-    };
-    
     authListeners.add(updateAuth);
-    
     updateAuth();
 
     return () => {
       authListeners.delete(updateAuth);
     };
-  }, []);
+  }, [updateAuth]);
 
-  return { 
+  return useMemo(() => ({ 
     user, 
     isAuthenticated, 
     login, 
     logout 
-  };
+  }), [user, isAuthenticated]);
 }
 
 export function AuthProvider({ children }: { children: any }) {

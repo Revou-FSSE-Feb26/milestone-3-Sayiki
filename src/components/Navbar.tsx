@@ -86,16 +86,13 @@ export default function navbar() {
                 </svg>
               </button>
 
-              {/* Dropdown Menu - Only show after mount */}
               {isMounted && isDropdownOpen && (
                 <>
-                  {/* Backdrop to close dropdown */}
                   <div 
                     className="fixed inset-0 z-10" 
                     onClick={closeDropdown}
                   ></div>
                   
-                  {/* Dropdown Content */}
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-stone-200 z-20">
                     {isAuthenticated ? (
                       <>

@@ -15,6 +15,7 @@ export default function CartPage() {
   const [message, setMessage] = useState("");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -32,12 +33,14 @@ export default function CartPage() {
     
     const fetchProducts = async () => {
       try {
+        setError("");
         const response = await fetch("/api/products");
+        if (!response.ok) throw new Error("Failed to load products");
         const data = await response.json();
         setProducts(data);
         setLoading(false);
       } catch (error) {
-        console.log("Error:", error);
+        setError("Failed to load cart items");
         setLoading(false);
       }
     };
@@ -120,7 +123,13 @@ export default function CartPage() {
       <>
         <Navbar />
         <div className="px-6 sm:px-10 lg:px-16 py-10">
-          <p>Loading cart...</p>
+          {error ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+              <p className="text-red-600">{error}</p>
+            </div>
+          ) : (
+            <p>Loading cart...</p>
+          )}
         </div>
       </>
     );

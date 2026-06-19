@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
   images: {
     remotePatterns: [
@@ -13,7 +12,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Fix workspace root warning
   turbopack: {
     root: __dirname,
   },
