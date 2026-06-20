@@ -43,7 +43,7 @@ export default function AdminPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch(`${window.location.origin}/api/products`);
       const data = await response.json();
       setProducts(data);
       setLoading(false);
@@ -73,7 +73,7 @@ export default function AdminPage() {
     if (!validateProduct()) return;
 
     try {
-      const url = editingId ? `/api/products/${editingId}` : '/api/products';
+      const url = editingId ? `${window.location.origin}/api/products/${editingId}` : `${window.location.origin}/api/products`;
       const method = editingId ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
@@ -116,7 +116,7 @@ export default function AdminPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const response = await fetch(`/api/products/${id}`, {
+      const response = await fetch(`${window.location.origin}/api/products/${id}`, {
         method: 'DELETE'
       });
 
