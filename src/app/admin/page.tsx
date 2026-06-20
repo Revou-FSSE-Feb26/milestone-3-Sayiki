@@ -57,7 +57,7 @@ export default function AdminPage() {
   const [errors, setErrors] = useState({});
 
   const validateProduct = () => {
-    const newErrors = {};
+    const newErrors: { [key: string]: string } = {};
     
     if (!formData.title || formData.title.trim().length < 3) {
       newErrors.title = "Title must be at least 3 characters";
