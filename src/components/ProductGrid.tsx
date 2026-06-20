@@ -8,7 +8,7 @@ export default function ProductGrid() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() =>{
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
         setError("");
@@ -17,15 +17,20 @@ export default function ProductGrid() {
         const data = await response.json();
         setProducts(data);
         setLoading(false);
-      } catch (error){
+      } catch (error) {
         setError("Unable to load products");
         setLoading(false);
       }
     };
     fetchProducts();
-  },[])
+  }, []);
 
-  if (loading){
+  const featuredProducts = useMemo(() => 
+    products.slice(0, 6), 
+    [products]
+  );
+
+  if (loading) {
     return(
       <div className="px-6 sm:px-10 lg:px-16 mt-16 mb-10">
         <p>Loading Products...</p>
@@ -42,10 +47,6 @@ export default function ProductGrid() {
       </div>
     )
   }
-  const featuredProducts = useMemo(() => 
-    products.slice(0, 6), 
-    [products]
-  );
 
   return (
     <section className="px-6 sm:px-10 lg:px-16 mt-16 mb-10">

@@ -14,6 +14,23 @@ export default function BrowsePage() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setError("");
+        const response = await fetch("/api/products");
+        if (!response.ok) throw new Error("Failed to load products");
+        const data = await response.json();
+        setProducts(data);
+        setLoading(false);
+      } catch (error) {
+        setError("Failed to load products. Please try again.");
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
   const categories = useMemo(() => [
     "all",
     ...Array.from(new Set(products.map((item) => item.category))),
@@ -29,26 +46,8 @@ export default function BrowsePage() {
       item.title.toLowerCase().includes(normalizedSearch);
     return matchesCategory && matchesSearch;
   }), [products, selectedCategory, normalizedSearch]);
-  
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try{
-        setError("");
-        const response = await fetch("/api/products");
-        if (!response.ok) throw new Error("Failed to load products");
-        const data = await response.json();
-        setProducts(data);
-        setLoading(false);
-      
-      } catch (error){
-        setError("Failed to load products. Please try again.");
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
-  if (loading){
+  if (loading) {
     return (
       <>
         <Navbar />
@@ -78,13 +77,12 @@ export default function BrowsePage() {
     )
   }
 
-
   return (
     <>
       <Navbar />
       <section className="px-6 sm:px-10 lg:px-16 py-10">
         <div className="flex flex-col gap-8 lg:flex-row">
-          <aside className="lg:w-72 flex-shrink-0">
+          <aside className="lg:w-72 shrink-0">
             <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
               <h2 className="text-base font-semibold text-neutral-900">
                 Browse Filters

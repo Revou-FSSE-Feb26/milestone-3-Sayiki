@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 
 export default function CartPage() {
   const { items, totalCount, removeFromCart, clearCart } = useCart();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [products, setProducts] = useState<any[]>([]);
@@ -29,7 +29,7 @@ export default function CartPage() {
   }, [isMounted, isAuthenticated, router]);
 
   useEffect(() => {
-    if (!isMounted) return; // Don't fetch until mounted
+    if (!isMounted) return;
     
     const fetchProducts = async () => {
       try {
@@ -47,43 +47,25 @@ export default function CartPage() {
     fetchProducts();
   }, [isMounted]);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login?redirect=/cart');
-      return;
-    }
-  }, [isAuthenticated, router]);
-
   const cartItems = items
     .map((item) => {
-      // Debug: Check what IDs we have
-      console.log('Cart item ID:', item.id, 'Type:', typeof item.id);
-      console.log('First few product IDs:', products.slice(0,3).map(p => ({id: p.id, type: typeof p.id})));
-      
       const product = products.find((entry) => {
-        // Convert both to strings for comparison
         return entry.id.toString() === item.id.toString();
       });
       
       if (!product) {
-        console.log('No product found for cart item:', item.id);
         return null;
       }
       
-      console.log('Found product:', product.title);
-      
       return { 
         ...product, 
-        quantity: item.quantity,
-        name: product.title,          
-        priceLabel: `$${product.price}`, 
-        priceValue: product.price      
+        quantity: item.quantity
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
   const cartTotal = cartItems.reduce(
-    (sum, item) => sum + item.priceValue * item.quantity,
+    (sum, item) => sum + item.price * item.quantity,
     0,
   );
 
@@ -158,9 +140,6 @@ export default function CartPage() {
         {cartItems.length === 0 ? (
           <div className="mt-10 rounded-2xl border border-dashed border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500">
             <p>Your cart is empty. Add items from Browse.</p>
-            
-        
-            
           </div>
         ) : (
           <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -173,7 +152,7 @@ export default function CartPage() {
                   <div className="flex h-24 w-full items-center justify-center rounded-xl bg-[#f2f1ee] sm:w-32">
                     <Image
                       src={item.image}
-                      alt={item.name}
+                      alt={item.title}
                       width={120}
                       height={120}
                       className="h-20 w-auto object-contain"
@@ -184,10 +163,10 @@ export default function CartPage() {
                       {item.category}
                     </span>
                     <h3 className="text-sm font-semibold text-neutral-900">
-                      {item.name}
+                      {item.title}
                     </h3>
                     <span className="text-sm font-medium text-neutral-700">
-                      {item.priceLabel}
+                      ${item.price}
                     </span>
                     <span className="text-xs text-neutral-500">
                       Qty: {item.quantity}
@@ -195,7 +174,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-neutral-900">
-                      ${(item.priceValue * item.quantity).toFixed(2)}
+                      ${(item.price * item.quantity).toFixed(2)}
                     </span>
                     <button
                       type="button"

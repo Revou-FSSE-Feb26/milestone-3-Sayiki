@@ -10,20 +10,19 @@ import Image from "next/image";
 export default function AdminPage() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  
+  const [mounted, setMounted] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-  const [mounted, setMounted] = useState(false);
-  
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     title: "",
     price: "",
     description: "",
     image: "",
-    category: ""
+    category: "",
   });
 
   useEffect(() => {
@@ -58,35 +57,20 @@ export default function AdminPage() {
 
   const validateProduct = () => {
     const newErrors: { [key: string]: string } = {};
-    
-    if (!formData.title || formData.title.trim().length < 3) {
-      newErrors.title = "Title must be at least 3 characters";
-    }
-    
-    if (!formData.price || parseFloat(formData.price) <= 0) {
-      newErrors.price = "Price must be greater than 0";
-    }
-    
-    if (formData.image && !formData.image.startsWith('http')) {
-      newErrors.image = "Image must be a valid URL (http/https)";
-    }
-    
-    if (formData.category && formData.category.length < 2) {
-      newErrors.category = "Category must be at least 2 characters";
-    }
-    
+
+    if (!formData.title.trim()) newErrors.title = "Title is required";
+    if (!formData.price.trim()) newErrors.price = "Price is required";
+    else if (isNaN(Number(formData.price))) newErrors.price = "Price must be a number";
+    if (!formData.description.trim()) newErrors.description = "Description is required";
+    if (!formData.category.trim()) newErrors.category = "Category is required";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    setMessage("");
-    if (!validateProduct()) {
-      setMessage("Please fix the errors below");
-      return;
-    }
+    if (!validateProduct()) return;
 
     try {
       const url = editingId ? `/api/products/${editingId}` : '/api/products';
@@ -94,41 +78,50 @@ export default function AdminPage() {
       
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: formData.title,
-          price: parseFloat(formData.price),
-          description: formData.description,
-          image: formData.image,
-          category: formData.category
-        })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setMessage(result.message);
-        setShowForm(false);
-        resetForm();
+        setFormData({ title: "", price: "", description: "", image: "", category: "" });
+        setIsEditing(false);
+        setEditingId(null);
         fetchProducts();
       } else {
         setMessage("Operation failed");
       }
     } catch (error) {
-      setMessage("Error saving product");
+      setMessage("Error occurred");
     }
   };
 
-  const handleDelete = async (id: string | number) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+  const handleEdit = (product: any) => {
+    setFormData({
+      title: product.title,
+      price: product.price.toString(),
+      description: product.description,
+      image: product.image,
+      category: product.category,
+    });
+    setEditingId(product.id.toString());
+    setIsEditing(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
       const response = await fetch(`/api/products/${id}`, {
         method: 'DELETE'
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         setMessage(result.message);
         fetchProducts();
@@ -136,31 +129,14 @@ export default function AdminPage() {
         setMessage("Delete failed");
       }
     } catch (error) {
-      setMessage("Error deleting product");
+      setMessage("Error occurred");
     }
   };
 
-  const startEdit = (product: any) => {
-    setEditingId(product.id);
-    setFormData({
-      title: product.title,
-      price: product.price.toString(),
-      description: product.description,
-      image: product.image,
-      category: product.category
-    });
-    setShowForm(true);
-  };
-
-  const resetForm = () => {
+  const handleCancel = () => {
+    setFormData({ title: "", price: "", description: "", image: "", category: "" });
+    setIsEditing(false);
     setEditingId(null);
-    setFormData({
-      title: "",
-      price: "",
-      description: "",
-      image: "",
-      category: ""
-    });
     setErrors({});
   };
 
@@ -168,8 +144,10 @@ export default function AdminPage() {
     return (
       <>
         <Navbar />
-        <div className="px-6 py-10">
-          <p>Loading...</p>
+        <div className="px-6 sm:px-10 lg:px-16 py-10">
+          <div className="text-center">
+            <p>Loading...</p>
+          </div>
         </div>
       </>
     );
@@ -179,8 +157,15 @@ export default function AdminPage() {
     return (
       <>
         <Navbar />
-        <div className="px-6 py-10">
-          <p>Redirecting to login...</p>
+        <div className="px-6 sm:px-10 lg:px-16 py-10">
+          <div className="text-center">
+            <h1 className="text-2xl font-semibold text-neutral-900 mb-4">
+              Admin Access Required
+            </h1>
+            <p className="text-neutral-600 mb-6">
+              Please log in to access the admin panel.
+            </p>
+          </div>
         </div>
       </>
     );
@@ -190,8 +175,8 @@ export default function AdminPage() {
     return (
       <>
         <Navbar />
-        <div className="px-6 py-10">
-          <p>Loading admin panel...</p>
+        <div className="px-6 sm:px-10 lg:px-16 py-10">
+          <p>Loading products...</p>
         </div>
       </>
     );
@@ -200,232 +185,61 @@ export default function AdminPage() {
   return (
     <>
       <Navbar />
-      <div className="px-6 sm:px-10 lg:px-16 py-10">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+      <section className="px-6 sm:px-10 lg:px-16 py-10">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600">Manage your products</p>
+            <h1 className="text-xl font-semibold text-neutral-900">
+              Admin Panel
+            </h1>
+            <p className="text-sm text-neutral-500">
+              Manage products
+            </p>
           </div>
-          <Button 
-            onClick={() => {
-              setShowForm(!showForm);
-              if (showForm) resetForm();
-            }}
-          >
-            {showForm ? 'Cancel' : 'Add Product'}
-          </Button>
+          {message && (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
+              {message}
+            </span>
+          )}
         </div>
 
-        {/* Message */}
-        {message && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-blue-800">{message}</p>
-            <button 
-              onClick={() => setMessage("")}
-              className="text-blue-600 text-sm hover:underline"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
-
-        {/* Add/Edit Form */}
-        {showForm && (
-          <div className="mb-8 p-6 bg-white border border-gray-200 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">
-              {editingId ? 'Edit Product' : 'Add New Product'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Product Title *
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => {
-                    setFormData({...formData, title: e.target.value});
-                    if (errors.title) {
-                      const { title, ...restErrors } = errors;
-                      setErrors(restErrors);
-                    }
-                  }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 text-black ${
-                    errors.title 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                  placeholder="Enter product title"
-                />
-                {errors.title && (
-                  <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => {
-                      setFormData({...formData, price: e.target.value});
-                      if (errors.price) {
-                        const { price, ...restErrors } = errors;
-                        setErrors(restErrors);
-                      }
-                    }}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 text-black ${
-                      errors.price 
-                        ? 'border-red-300 focus:ring-red-500' 
-                        : 'border-gray-300 focus:ring-blue-500'
-                    }`}
-                    placeholder="0.00"
-                  />
-                  {errors.price && (
-                    <p className="text-red-500 text-sm mt-1">{errors.price}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.category}
-                    onChange={(e) => {
-                      setFormData({...formData, category: e.target.value});
-                    if (errors.category) {
-                      const { category, ...restErrors } = errors;
-                      setErrors(restErrors);
-                    }
-                    }}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 text-black ${
-                      errors.category 
-                        ? 'border-red-300 focus:ring-red-500' 
-                        : 'border-gray-300 focus:ring-blue-500'
-                    }`}
-                    placeholder="electronics, clothing, etc."
-                  />
-                  {errors.category && (
-                    <p className="text-red-500 text-sm mt-1">{errors.category}</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image URL
-                </label>
-                <input
-                  type="url"
-                  value={formData.image}
-                  onChange={(e) => {
-                    setFormData({...formData, image: e.target.value});
-                    if (errors.image) {
-                      const { image, ...restErrors } = errors;
-                      setErrors(restErrors);
-                    }
-                  }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 text-black ${
-                    errors.image 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                  placeholder="https://example.com/image.jpg"
-                />
-                {errors.image && (
-                  <p className="text-red-500 text-sm mt-1">{errors.image}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Product description..."
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <Button type="submit">
-                  {editingId ? 'Update Product' : 'Add Product'}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => {
-                    setShowForm(false);
-                    resetForm();
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Products List */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-black">All Products ({products.length})</h2>
-          </div>
-          <div className="divide-y divide-gray-200">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-neutral-900">Products ({products.length})</h2>
             {products.map((product) => (
-              <div key={product.id} className="p-6 flex items-center gap-4">
-                {/* Product Image */}
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center">
-                  {product.image ? (
-                    <Image
-                      src={product.image}
-                      alt={product.title}
-                      width={64}
-                      height={64}
-                      className="w-12 h-12 object-contain"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-gray-300 rounded"></div>
-                  )}
+              <div
+                key={product.id}
+                className="flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
+              >
+                <div className="flex h-20 w-full items-center justify-center rounded-xl bg-[#f2f1ee] sm:w-24">
+                  <Image
+                    src={product.image}
+                    alt={product.title}
+                    width={80}
+                    height={80}
+                    className="h-16 w-auto object-contain"
+                  />
                 </div>
-                
-                {/* Product Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-900 truncate">
+                <div className="flex flex-1 flex-col gap-1">
+                  <h3 className="text-sm font-semibold text-neutral-900">
                     {product.title}
                   </h3>
-                  <p className="text-sm text-gray-500">
-                    ${product.price} • {product.category}
-                  </p>
-                  <p className="text-xs text-gray-400 truncate">
-                    ID: {product.id}
-                  </p>
+                  <span className="text-sm font-medium text-neutral-700">
+                    ${product.price}
+                  </span>
+                  <span className="text-xs uppercase tracking-wide text-neutral-500">
+                    {product.category}
+                  </span>
                 </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => startEdit(product)}
+                    onClick={() => handleEdit(product)}
+                    className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700"
                   >
                     Edit
                   </Button>
                   <Button
-                    variant="outline"
-                    size="sm"
                     onClick={() => handleDelete(product.id)}
-                    className="text-red-600 border-red-300 hover:bg-red-600"
+                    className="text-xs px-3 py-1 bg-red-600 hover:bg-red-700"
                   >
                     Delete
                   </Button>
@@ -433,8 +247,98 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+
+          <div className="h-fit rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-neutral-900 mb-4">
+              {isEditing ? 'Edit Product' : 'Add New Product'}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-neutral-400 focus:outline-none"
+                />
+                {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Price
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-neutral-400 focus:outline-none"
+                />
+                {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-neutral-400 focus:outline-none"
+                />
+                {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Image URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-neutral-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-neutral-400 focus:outline-none"
+                />
+                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  className="flex-1 bg-neutral-900 hover:bg-neutral-800 text-white"
+                >
+                  {isEditing ? 'Update Product' : 'Add Product'}
+                </Button>
+                {isEditing && (
+                  <Button
+                    type="button"
+                    onClick={handleCancel}
+                    className="px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-700"
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      </section>
     </>
   );
 }
