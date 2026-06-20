@@ -18,7 +18,7 @@ export default function ProductPage() {
 
   useEffect(() => {
     if (id) {
-      fetch(`/api/products/${id}`)
+      fetch(`https://fakestoreapi.com/products/${id}`)
         .then(response => response.json())
         .then(data => {
           setProduct(data);
