@@ -18,7 +18,7 @@ export default function ProductPage() {
 
   useEffect(() => {
     if (id) {
-      fetch(`${window.location.origin}/api/products/${id}`)
+      fetch(`/api/products/${id}`)
         .then(response => response.json())
         .then(data => {
           setProduct(data);

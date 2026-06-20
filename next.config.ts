@@ -15,6 +15,19 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Netlify compatibility
+  experimental: {
+    serverComponentsExternalPackages: [],
+  },
+  // Ensure API routes work properly
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api/:path*',
+      },
+    ]
+  },
 };
 
 export default nextConfig;

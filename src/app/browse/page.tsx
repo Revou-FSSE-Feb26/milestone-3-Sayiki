@@ -18,7 +18,7 @@ export default function BrowsePage() {
     const fetchProducts = async () => {
       try {
         setError("");
-        const response = await fetch(`${window.location.origin}/api/products`);
+        const response = await fetch("/api/products");
         if (!response.ok) throw new Error("Failed to load products");
         const data = await response.json();
         setProducts(data);
