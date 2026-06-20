@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const response = await fetch(`https://fakestoreapi.com/products/${id}`)
     const product = await response.json()
     
@@ -23,7 +23,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const body = await request.json()
     
     const response = await fetch(`https://fakestoreapi.com/products/${id}`, {
@@ -61,7 +61,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const response = await fetch(`https://fakestoreapi.com/products/${id}`, {
       method: 'DELETE',
     })
