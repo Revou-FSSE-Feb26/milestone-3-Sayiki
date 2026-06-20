@@ -61,40 +61,40 @@ if (typeof window !== "undefined") {
   }
 }
 
-const login = useCallback(async (username: string, password: string) => {
-  try {
-    const response = await fetch('https://fakestoreapi.com/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      
-      authProxy.user = {
-        id: 1,
-        username: username,
-        email: `${username}@example.com`,
-        token: data.token
-      };
-      
-      return { success: true, message: "Login successful!" };
-    } else {
-      return { success: false, message: "Invalid username or password" };
-    }
-  } catch (error) {
-    return { success: false, message: "Login failed. Please try again." };
-  }
-}, []);
-
-const logout = useCallback(() => {
-  authProxy.user = null;
-}, []);
-
 export function useAuth() {
   const [user, setUser] = useState<User | null>(authProxy.user);
   const [isAuthenticated, setIsAuthenticated] = useState(authProxy.isAuthenticated);
+
+  const login = useCallback(async (username: string, password: string) => {
+    try {
+      const response = await fetch('https://fakestoreapi.com/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        authProxy.user = {
+          id: 1,
+          username: username,
+          email: `${username}@example.com`,
+          token: data.token
+        };
+        
+        return { success: true, message: "Login successful!" };
+      } else {
+        return { success: false, message: "Invalid username or password" };
+      }
+    } catch (error) {
+      return { success: false, message: "Login failed. Please try again." };
+    }
+  }, []);
+
+  const logout = useCallback(() => {
+    authProxy.user = null;
+  }, []);
 
   const updateAuth = useCallback(() => {
     setUser(authProxy.user);
@@ -115,7 +115,7 @@ export function useAuth() {
     isAuthenticated, 
     login, 
     logout 
-  }), [user, isAuthenticated]);
+  }), [user, isAuthenticated, login, logout]);
 }
 
 export function AuthProvider({ children }: { children: any }) {

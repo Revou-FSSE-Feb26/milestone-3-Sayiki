@@ -13,7 +13,7 @@ export default function CartPage() {
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const [message, setMessage] = useState("");
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isMounted, setIsMounted] = useState(false);

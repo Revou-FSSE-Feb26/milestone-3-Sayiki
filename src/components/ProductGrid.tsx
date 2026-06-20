@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 
 export default function ProductGrid() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 

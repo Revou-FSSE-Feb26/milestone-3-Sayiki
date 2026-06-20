@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -11,7 +11,7 @@ export default function AdminPage() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -54,7 +54,7 @@ export default function AdminPage() {
     }
   }, []);
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validateProduct = () => {
     const newErrors: { [key: string]: string } = {};
@@ -79,7 +79,7 @@ export default function AdminPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     setMessage("");
@@ -119,7 +119,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string | number) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
@@ -140,7 +140,7 @@ export default function AdminPage() {
     }
   };
 
-  const startEdit = (product) => {
+  const startEdit = (product: any) => {
     setEditingId(product.id);
     setFormData({
       title: product.title,
@@ -246,7 +246,10 @@ export default function AdminPage() {
                   value={formData.title}
                   onChange={(e) => {
                     setFormData({...formData, title: e.target.value});
-                    if (errors.title) setErrors({...errors, title: null});
+                    if (errors.title) {
+                      const { title, ...restErrors } = errors;
+                      setErrors(restErrors);
+                    }
                   }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 text-black ${
                     errors.title 
@@ -272,7 +275,10 @@ export default function AdminPage() {
                     value={formData.price}
                     onChange={(e) => {
                       setFormData({...formData, price: e.target.value});
-                      if (errors.price) setErrors({...errors, price: null});
+                      if (errors.price) {
+                        const { price, ...restErrors } = errors;
+                        setErrors(restErrors);
+                      }
                     }}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 text-black ${
                       errors.price 
@@ -294,7 +300,10 @@ export default function AdminPage() {
                     value={formData.category}
                     onChange={(e) => {
                       setFormData({...formData, category: e.target.value});
-                      if (errors.category) setErrors({...errors, category: null});
+                    if (errors.category) {
+                      const { category, ...restErrors } = errors;
+                      setErrors(restErrors);
+                    }
                     }}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 text-black ${
                       errors.category 
@@ -318,7 +327,10 @@ export default function AdminPage() {
                   value={formData.image}
                   onChange={(e) => {
                     setFormData({...formData, image: e.target.value});
-                    if (errors.image) setErrors({...errors, image: null});
+                    if (errors.image) {
+                      const { image, ...restErrors } = errors;
+                      setErrors(restErrors);
+                    }
                   }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 text-black ${
                     errors.image 

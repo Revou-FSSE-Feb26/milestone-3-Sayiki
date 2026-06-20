@@ -8,7 +8,7 @@ import { useCart } from "../context/CartContext";
 
 export default function BrowsePage() {
   const { addToCart } = useCart();
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");

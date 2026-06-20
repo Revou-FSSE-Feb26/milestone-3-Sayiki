@@ -13,7 +13,7 @@ export default function ProductPage() {
   const { isAuthenticated } = useAuth();
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
